@@ -1,4 +1,4 @@
-#include "main.h"
+#include "bar/main.h"
 #include "bar/bar.h"
 
 int main(int argc, char **argv) {
