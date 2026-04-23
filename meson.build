@@ -1,24 +1,21 @@
 project(
-  'yurta DE',
+  'yurta-de',
   'c',
+  version : '0.1.1',
   meson_version : '>= 1.3.0',
-  version : '0.1'
+  default_options : ['c_std=gnu17', 'warning_level=2']
 )
 
-src_files = files(
-  'src/main.c', 
-  'src/bar/bar.c', 
-  'src/bar/battery.c',
-  'src/bar/clock.c')
+# Global dependencies
+gtk_dep = dependency('gtk4')
+layer_shell_dep = dependency('gtk4-layer-shell-0')
+dbus_dep = dependency('dbus-1')
+pipewire_dep = dependency('libpipewire-0.3')
+
+# Make them available to subdirectories
+common_deps = [gtk_dep, layer_shell_dep, dbus_dep, pipewire_dep]
 inc_dirs = include_directories('include')
 
-dependencies = [
-  dependency('gtk4-layer-shell-0'), dependency('gtk4'), dependency('dbus-1'), dependency('libpipewire-0.3')
-]
-
-executable(
-  'run_yurta',
-  src_files, 
-    include_directories : inc_dirs,
-  dependencies : dependencies
-)
+# Go into subdirectories
+subdir('src/bar')
+# subdir('src/settings')
