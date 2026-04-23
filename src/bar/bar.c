@@ -1,3 +1,4 @@
+#include "gtk/gtk.h"
 #include "gtk4-layer-shell.h"
 #include <dbus/dbus.h>
 
@@ -13,9 +14,8 @@ GtkBuilder *builder;
 void activate(GtkApplication *app, void *_data) {
   (void)_data;
 
-  builder = gtk_builder_new();
-  gtk_builder_add_from_file(
-      builder, "/home/fedor/Developments/yurta-de/ui/bar.ui", NULL);
+  builder = gtk_builder_new_from_resource("/org/yurta/de/ui/bar.ui");
+
 
   GtkWindow *bar = GTK_WINDOW(gtk_builder_get_object(builder, "bar"));
   gtk_window_set_application(bar, app);
