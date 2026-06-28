@@ -9,9 +9,15 @@
                     <object class="GtkBox" id="box">
                         <property name="orientation">vertical</property>
                         <property name="margin-top">10</property>
+                        <property name="spacing">10</property>
                         <child>
                             <object class="GtkLabel" id="clock_Label">
                                 <property name="label"></property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkImage" id="vol_icon">
+                                <property name="icon-name">audio-volume-high-symbolic</property>
                             </object>
                         </child>
                     </object>

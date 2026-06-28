@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk" version="4.0" />
+  <requires lib="libadwaita" version="1.0" />
+
+  <object class="AdwWindow" id="window">
+    <property name="default-width">800</property>
+    <property name="default-height">600</property>
+    <property name="content">
+
+      <object class="AdwNavigationView" id="nav_view">
+
+        <child>
+          <object class="AdwNavigationPage">
+            <property name="tag">main_dashboard</property>
+            <property name="title">Yurta Settings</property>
+
+            <property name="child">
+              <object class="AdwToolbarView">
+                <child type="top">
+                  <object class="AdwHeaderBar" />
+                </child>
+
+                <property name="content">
+                  <object class="GtkScrolledWindow">
+                    <property name="vexpand">true</property>
+                    <property name="hexpand">true</property>
+                    <property name="child">
+                      <object class="AdwClamp">
+                        <property name="maximum-size">800</property>
+                        <property name="child">
+                          <object class="GtkFlowBox">
+                            <property name="orientation">horizontal</property>
+                            <property name="valign">start</property>
+                            <property name="column-spacing">16</property>
+                            <property name="row-spacing">16</property>
+                            <property name="homogeneous">false</property>
+                            <property name="max-children-per-line">3</property>
+                            <property name="min-children-per-line">1</property>
+                            <property name="selection-mode">none</property>
+
+                            <child>
+                              <object class="GtkFlowBoxChild">
+                                <property name="can-focus">false</property>
+                                <property name="child">
+                                  <object class="AdwPreferencesGroup">
+                                    <property name="width-request">230</property>
+                                    <property name="valign">start</property>
+
+                                    <child>
+                                      <object class="AdwExpanderRow">
+                                        <property name="title">Appearance</property>
+                                        <property name="subtitle">Look and Feel</property>
+                                        <property name="icon-name">preferences-desktop-theme</property>
+                                        <child>
+                                          <object class="AdwActionRow" id="wallpaper_row">
+                                            <property name="title">Wallpaper</property>
+                                            <property name="activatable">true</property>
+                                            <child type="prefix">
+                                              <object class="GtkImage">
+                                                <property name="icon-name">preferences-desktop-wallpaper</property>
+                                              </object>
+                                            </child>
+                                            <child type="suffix">
+                                              <object class="GtkImage">
+                                                <property name="icon-name">go-next-symbolic</property>
+                                              </object>
+                                            </child>
+                                          </object>
+                                        </child>
+                                      </object>
+                                    </child>
+
+
+                                  </object>
+                                  
+                                </property>
+                              </object>
+                            </child>
+
+                          </object>
+                        </property>
+                      </object>
+                    </property>
+                  </object>
+                </property>
+              </object>
+            </property>
+
+          </object>
+        </child>
+
+        <child>
+          <object class="YurtaWallpaperPage" id="wallpaper_page" />
+        </child>
+
+      </object>
+
+    </property>
+  </object>
+</interface>

@@ -5,6 +5,7 @@
 #include "bar/bar.h"
 #include "bar/battery.h"
 #include "bar/clock.h"
+#include "bar/sound.h"
 
 GtkBuilder *builder;
 
@@ -26,6 +27,10 @@ void activate(GtkApplication *app, void *_data) {
   GtkImage *batt_icon = GTK_IMAGE(gtk_builder_get_object(builder, "batt"));
   gtk_image_set_pixel_size(batt_icon, 24);
 
+  GtkImage *vol_icon = GTK_IMAGE(gtk_builder_get_object(builder, "vol_icon"));
+  gtk_image_set_pixel_size(vol_icon, 24);
+  
+
   //
   // Bar
   //
@@ -45,9 +50,10 @@ void activate(GtkApplication *app, void *_data) {
   //
   // Activating Func
   //
-
   activateClock(clock_label);
   activateBattery(batt_icon);
+  activateSound(vol_icon);
+  // activateSound(vol_icon);
 
   gtk_window_present(GTK_WINDOW(bar));
 }

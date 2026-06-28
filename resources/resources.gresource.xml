@@ -2,5 +2,7 @@
 <gresources>
     <gresource prefix="/org/yurta/de">
         <file>ui/bar.ui</file>
+        <file>ui/settings_de.ui</file>
+        <file>ui/settings_de_wallpaper_page.ui</file>
     </gresource>
 </gresources>

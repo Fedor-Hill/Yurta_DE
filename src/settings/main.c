@@ -1,37 +1,34 @@
 #include "settings/main.h"
+#include "settings/yurta-wallpaper-page.h"
+
+static void on_row_clicked(AdwActionRow *row, AdwNavigationView *nav_view) {
+  adw_navigation_view_push_by_tag(nav_view, "wallpaper_settings");
+}
 
 static void activate(GtkApplication *app) {
-  GtkWidget *window = adw_application_window_new(app);
-  gtk_window_set_title(GTK_WINDOW(window), "Yurta Settings");
-  gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
+  g_type_ensure(YURTA_TYPE_WALLPAPER_PAGE);
+  GtkBuilder *builder =
+      gtk_builder_new_from_resource("/org/yurta/de/ui/settings_de.ui");
 
-  GtkWidget *header = adw_header_bar_new();
+  GtkWindow *window = GTK_WINDOW(gtk_builder_get_object(builder, "window"));
 
-  GtkWidget *page = adw_preferences_page_new();
-  adw_preferences_page_set_title(ADW_PREFERENCES_PAGE(page), "General");
+  AdwNavigationView *nav_view =
+      ADW_NAVIGATION_VIEW(gtk_builder_get_object(builder, "nav_view"));
+  AdwActionRow *appearance_row =
+      ADW_ACTION_ROW(gtk_builder_get_object(builder, "wallpaper_row"));
 
-  GtkWidget *group = adw_preferences_group_new();
-  adw_preferences_group_set_title(ADW_PREFERENCES_GROUP(group), "Appearance");
+  g_signal_connect (appearance_row, "activated", G_CALLBACK (on_row_clicked), nav_view);
 
-  GtkWidget *switch_row = adw_switch_row_new();
-  adw_preferences_row_set_title(ADW_PREFERENCES_ROW(switch_row), "Dark Mode");
-  adw_preferences_group_add(ADW_PREFERENCES_GROUP(group), switch_row);
-
-  adw_preferences_page_add(ADW_PREFERENCES_PAGE(page),
-                           ADW_PREFERENCES_GROUP(group));
-
-  GtkWidget *content = adw_toolbar_view_new();
-  adw_toolbar_view_add_top_bar(ADW_TOOLBAR_VIEW(content), header);
-  adw_toolbar_view_set_content(ADW_TOOLBAR_VIEW(content), page);
-
-  adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), content);
-
-  gtk_window_present(GTK_WINDOW(window));
+  gtk_window_set_application(window, GTK_APPLICATION(app));
+  g_object_unref(builder);
+  gtk_window_present(window);
 }
 
 int main(int argc, char *argv[]) {
   g_autoptr(AdwApplication) app =
       adw_application_new("org.yurta.settings", G_APPLICATION_DEFAULT_FLAGS);
+
   g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
+
   return g_application_run(G_APPLICATION(app), argc, argv);
 }
