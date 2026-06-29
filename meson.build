@@ -1,7 +1,7 @@
 project(
   'yurta-de',
   'c',
-  version: '0.1.2',
+  version: '0.2.0',
   meson_version: '>= 1.3.0',
   default_options: ['c_std=gnu17', 'warning_level=2'],
 )
