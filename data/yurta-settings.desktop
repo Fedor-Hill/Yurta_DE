@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Yurta Settings
+Comment=Configure the Yurta Desktop Environment
+Exec=yurta-settings
+Icon=preferences-desktop
+Terminal=false
+Categories=Settings;DesktopSettings;
