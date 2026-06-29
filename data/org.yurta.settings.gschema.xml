@@ -5,5 +5,9 @@
             <default>''</default>
             <summary>Current active wallpaper path</summary>
         </key>
+        <key name="wallpaper-path-history" type="as">
+            <default>[]</default>
+            <summary>History of last 7 wallpapers, that user selected</summary>
+        </key>
     </schema>
 </schemalist>

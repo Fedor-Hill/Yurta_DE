@@ -19,22 +19,63 @@
               <object class="AdwClamp">
                 <property name="maximum-size">1000</property>
                 <property name="child">
-                  <object class="AdwPreferencesGroup">
-                    <property name="title">Available Backgrounds</property>
+                  <object class="GtkBox">
+                    <property name="orientation">vertical</property>
+                    <property name="spacing">16</property>
+
                     <child>
-                      <object class="GtkFlowBox" id="wallpaper_flowbox">
-                        <property name="homogeneous">false</property>
-                        <property name="column-spacing">12</property>
-                        <property name="row-spacing">12</property>
-                        <property name="min-children-per-line">2</property>
-                        <property name="max-children-per-line">4</property>
-                        <property name="selection-mode">single</property>
-                        <property name="margin-top">12</property>
-                        <property name="margin-bottom">12</property>
-                        <property name="margin-start">12</property>
-                        <property name="margin-end">12</property>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title">Recent Wallpapers</property>
+                        <child>
+                          <object class="GtkBox">
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">8</property>
+                            <child>
+                              <object class="GtkBox">
+                                <property name="height-request">140</property>
+                                <child>
+                                  <object class="AdwCarousel" id="history_carousel">
+                                    <property name="spacing">12</property>
+                                    <property name="reveal-duration">200</property>
+                                    <property name="hexpand">true</property>
+                                  </object>
+                                </child>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="AdwCarouselIndicatorLines">
+                                <property name="carousel">history_carousel</property>
+                                <property name="halign">center</property>
+                                <property name="margin-top">4</property>
+                                <property name="margin-bottom">4</property>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
                       </object>
                     </child>
+
+                    <child>
+                      <object class="AdwPreferencesGroup">
+                        <property name="title">Available Backgrounds</property>
+                        <property name="margin-bottom">167</property>
+                        <child>
+                          <object class="GtkFlowBox" id="wallpaper_flowbox">
+                            <property name="homogeneous">false</property>
+                            <property name="column-spacing">12</property>
+                            <property name="row-spacing">12</property>
+                            <property name="min-children-per-line">2</property>
+                            <property name="max-children-per-line">4</property>
+                            <property name="selection-mode">single</property>
+                            <property name="margin-top">12</property>
+                            <property name="margin-bottom">12</property>
+                            <property name="margin-start">12</property>
+                            <property name="margin-end">12</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+
                   </object>
                 </property>
               </object>

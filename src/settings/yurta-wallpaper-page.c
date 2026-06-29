@@ -11,6 +11,7 @@ struct _YurtaWallpaperPage {
   AdwNavigationPage parent_instance;
   GtkFlowBox *wallpaper_flowbox;
   GSettings *settings;
+  AdwCarousel *history_carousel;
 };
 
 typedef struct {
@@ -21,6 +22,14 @@ typedef struct {
 
 G_DEFINE_TYPE(YurtaWallpaperPage, yurta_wallpaper_page,
               ADW_TYPE_NAVIGATION_PAGE)
+
+//
+//
+//
+// Available Card Preview Wallpapers
+//
+//
+//
 
 // Need for optimization
 static GdkTexture *make_thumbnail(GFile *file, int target_width,
@@ -76,8 +85,43 @@ static void on_wallpaper_selected(GtkButton *btn, gpointer user_data) {
   g_print("Initiating background update via swaybg to target asset: %s\n",
           wallpaper_path);
 
+  // Save in gsettings current wallpaper
   g_settings_set_string(self->settings, "current-wallpaper-path",
                         wallpaper_path);
+
+  // UPD history
+  g_auto(GStrv) old_history =
+      g_settings_get_strv(self->settings, "wallpaper-path-history");
+  guint old_len = old_history ? g_strv_length(old_history) : 0;
+
+  if (old_len == 0 ||
+      g_strcmp0(old_history[old_len - 1], wallpaper_path) != 0) {
+
+    guint new_len = old_len + 1;
+    if (new_len > 7) {
+      new_len = 7;
+    }
+
+    GStrv new_history = g_new0(gchar *, new_len + 1);
+
+    guint src_start_index = (old_len >= 7) ? (old_len - 6) : 0;
+    guint target_index = 0;
+
+    for (guint i = src_start_index; i < old_len; i++) {
+      new_history[target_index++] = g_strdup(old_history[i]);
+    }
+
+    new_history[target_index++] = g_strdup(wallpaper_path);
+    new_history[target_index] = NULL;
+
+    g_settings_set_strv(self->settings, "wallpaper-path-history",
+                        (const gchar *const *)new_history);
+    g_strfreev(new_history);
+
+    g_print("Yurta History: Appended asset. Total recorded trajectory is now "
+            "%u entries.\n",
+            new_len);
+  }
 
   // Kill other swaybg proccesses
   g_spawn_command_line_async("pkill swaybg", NULL);
@@ -163,7 +207,6 @@ static void on_clicked_bin(GtkGestureClick *gesture, int n_press, double x,
   adw_dialog_present(dick, GTK_WIDGET(self));
 }
 
-
 static gboolean add_preview_card(gpointer user_data) {
   WallpaperPreviewLoadData *data = (WallpaperPreviewLoadData *)user_data;
   YurtaWallpaperPage *self = data->page;
@@ -186,8 +229,8 @@ static gboolean add_preview_card(gpointer user_data) {
   gtk_widget_add_css_class(card, "card");
   adw_bin_set_child(ADW_BIN(card), gtk_picture);
 
-  g_object_set_data_full(G_OBJECT(card), "wallpaper-path", g_strdup(data->file_path),
-                         g_free);
+  g_object_set_data_full(G_OBJECT(card), "wallpaper-path",
+                         g_strdup(data->file_path), g_free);
 
   // Add click action to bin
   GtkGesture *click_gesture = gtk_gesture_click_new();
@@ -197,8 +240,7 @@ static gboolean add_preview_card(gpointer user_data) {
   // Add done picture carc to FlowBox
   gtk_flow_box_append(self->wallpaper_flowbox, card);
 
-
-  //Clean task data
+  // Clean task data
   g_free(data->file_path);
   g_clear_object(&data->texture);
   g_free(data);
@@ -259,7 +301,7 @@ static void init_wallpaper(YurtaWallpaperPage *self) {
     GTask *task = g_task_new(self, NULL, NULL, NULL);
     g_task_set_task_data(task, taskData, NULL);
     g_task_run_in_thread(task, preview_thread_load);
-     
+
     g_object_unref(info);
   }
 
@@ -267,6 +309,75 @@ static void init_wallpaper(YurtaWallpaperPage *self) {
   g_file_enumerator_close(enumerator, NULL, NULL);
   g_object_unref(enumerator);
   g_object_unref(dir);
+}
+
+//
+//
+//
+// Carousel
+//
+//
+static void clear_carousel(AdwCarousel *carousel) {
+  GtkWidget *child;
+  while ((child = gtk_widget_get_first_child(GTK_WIDGET(carousel))) != NULL) {
+    adw_carousel_remove(carousel, child);
+  }
+}
+
+static void sync_history_carusel(YurtaWallpaperPage *self) {
+  clear_carousel(self->history_carousel);
+  g_auto(GStrv) history =
+      g_settings_get_strv(self->settings, "wallpaper-path-history");
+  guint length = history ? g_strv_length(history) : 0;
+
+  if (length == 0) {
+    GtkWidget *placeholder = gtk_label_new("No wallpapers, hoeh ?");
+    gtk_widget_add_css_class(placeholder, "dim-label");
+    adw_carousel_insert(self->history_carousel, placeholder, -1);
+    return;
+  }
+
+  for (int i = (int)length - 1; i >= 0; i--) {
+    const gchar *file_path = history[i];
+    GFile *image_file = g_file_new_for_path(file_path);
+
+    GdkTexture *thumb_texture = make_thumbnail(image_file, 240, 160);
+    GtkWidget *gtk_picture;
+
+    if (thumb_texture) {
+      gtk_picture = gtk_picture_new_for_paintable(GDK_PAINTABLE(thumb_texture));
+      g_object_unref(thumb_texture);
+    } else {
+      gtk_picture = gtk_picture_new_for_file(image_file);
+    }
+    g_object_unref(image_file);
+
+    gtk_picture_set_content_fit(GTK_PICTURE(gtk_picture),
+                                GTK_CONTENT_FIT_COVER);
+    gtk_widget_set_size_request(gtk_picture, 200, 130);
+
+    GtkWidget *card = adw_bin_new();
+    gtk_widget_add_css_class(card, "card");
+    adw_bin_set_child(ADW_BIN(card), gtk_picture);
+
+    g_object_set_data_full(G_OBJECT(card), "wallpaper-path",
+                           g_strdup(file_path), g_free);
+
+    GtkGesture *click_gesture = gtk_gesture_click_new();
+    g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_clicked_bin),
+                     self);
+    gtk_widget_add_controller(card, GTK_EVENT_CONTROLLER(click_gesture));
+
+    adw_carousel_insert(self->history_carousel, card, -1);
+  }
+}
+
+static void on_history_changed(GSettings *settings, const gchar *key,
+                               gpointer user_data) {
+  if (g_strcmp0(key, "wallpaper-path-history") == 0) {
+    YurtaWallpaperPage *self = YURTA_WALLPAPER_PAGE(user_data);
+    sync_history_carusel(self);
+  }
 }
 
 static void yurta_wallpaper_page_dispose(GObject *object) {
@@ -279,8 +390,13 @@ static void yurta_wallpaper_page_dispose(GObject *object) {
 
 static void yurta_wallpaper_page_init(YurtaWallpaperPage *self) {
   gtk_widget_init_template(GTK_WIDGET(self));
+
   self->settings = g_settings_new("org.yurta.settings");
+
+  g_signal_connect(self->settings, "changed::wallpaper-path-history",
+                   G_CALLBACK(on_history_changed), self);
   g_signal_connect_swapped(self, "map", G_CALLBACK(init_wallpaper), self);
+  sync_history_carusel(self);
 }
 
 static void yurta_wallpaper_page_class_init(YurtaWallpaperPageClass *klass) {
@@ -294,6 +410,8 @@ static void yurta_wallpaper_page_class_init(YurtaWallpaperPageClass *klass) {
 
   gtk_widget_class_bind_template_child(widget_class, YurtaWallpaperPage,
                                        wallpaper_flowbox);
+  gtk_widget_class_bind_template_child(widget_class, YurtaWallpaperPage,
+                                       history_carousel);
 }
 
 YurtaWallpaperPage *yurta_wallpaper_page_new(void) {
