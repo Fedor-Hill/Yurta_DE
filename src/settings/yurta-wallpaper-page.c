@@ -6,7 +6,6 @@
 #include "glib.h"
 #include "gtk/gtk.h"
 #include "gtk/gtkshortcut.h"
-#include <stdlib.h>
 
 struct _YurtaWallpaperPage {
   AdwNavigationPage parent_instance;
@@ -260,43 +259,7 @@ static void init_wallpaper(YurtaWallpaperPage *self) {
     GTask *task = g_task_new(self, NULL, NULL, NULL);
     g_task_set_task_data(task, taskData, NULL);
     g_task_run_in_thread(task, preview_thread_load);
-
-    // Creatig GtkPicture
-    //     GdkTexture *thumb_texture = make_thumbnail(image_file, 240, 160);
-    //     GtkWidget *gtk_picture;
-    //
-    //     if (thumb_texture) {
-    //       gtk_picture =
-    //       gtk_picture_new_for_paintable(GDK_PAINTABLE(thumb_texture));
-    //       g_object_unref(thumb_texture);
-    //     } else {
-    //       gtk_picture = gtk_picture_new_for_file(image_file);
-    //     }
-    //
-    //     gtk_picture_set_content_fit(GTK_PICTURE(gtk_picture),
-    //                                 GTK_CONTENT_FIT_COVER);
-    //     gtk_widget_set_size_request(gtk_picture, 120, 80);
-    //
-    //     // Creating Bin (Card) Widget
-    //     GtkWidget *card = adw_bin_new();
-    //     gtk_widget_add_css_class(card, "card");
-    //     adw_bin_set_child(ADW_BIN(card), gtk_picture);
-    //
-    //     g_object_set_data_full(G_OBJECT(card), "wallpaper-path", file_path,
-    //     g_free);
-    //
-    //     // Add click action to bin
-    //     GtkGesture *click_gesture = gtk_gesture_click_new();
-    //     g_signal_connect(click_gesture, "pressed",
-    //     G_CALLBACK(on_clicked_bin),
-    //                      self);
-    //     gtk_widget_add_controller(card, GTK_EVENT_CONTROLLER(click_gesture));
-    //
-    //     // Add done picture carc to FlowBox
-    //     gtk_flow_box_append(self->wallpaper_flowbox, card);
-
-    // Clear
-    // g_object_unref(image_file);
+     
     g_object_unref(info);
   }
 
