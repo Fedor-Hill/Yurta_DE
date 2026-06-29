@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
     <gresource prefix="/org/yurta/de">
+        <file>styles/bar.css</file>
         <file>ui/bar.ui</file>
         <file>ui/settings_de.ui</file>
         <file>ui/settings_de_wallpaper_page.ui</file>

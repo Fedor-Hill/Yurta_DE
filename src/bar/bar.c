@@ -14,9 +14,19 @@ GtkBuilder *builder;
 //
 void activate(GtkApplication *app, void *_data) {
   (void)_data;
+  
+  // Provide custom (my) css
+  GtkCssProvider *provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_resource(provider, "/org/yurta/de/styles/bar.css");
+
+  gtk_style_context_add_provider_for_display(
+      gdk_display_get_default(), GTK_STYLE_PROVIDER(provider),
+      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+  );
+
+  g_object_unref(provider);
 
   builder = gtk_builder_new_from_resource("/org/yurta/de/ui/bar.ui");
-
 
   GtkWindow *bar = GTK_WINDOW(gtk_builder_get_object(builder, "bar"));
   gtk_window_set_application(bar, app);
@@ -29,7 +39,6 @@ void activate(GtkApplication *app, void *_data) {
 
   GtkImage *vol_icon = GTK_IMAGE(gtk_builder_get_object(builder, "vol_icon"));
   gtk_image_set_pixel_size(vol_icon, 24);
-  
 
   //
   // Bar
@@ -53,7 +62,6 @@ void activate(GtkApplication *app, void *_data) {
   activateClock(clock_label);
   activateBattery(batt_icon);
   activateSound(vol_icon);
-  // activateSound(vol_icon);
 
   gtk_window_present(GTK_WINDOW(bar));
 }

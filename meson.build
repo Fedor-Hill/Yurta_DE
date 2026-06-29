@@ -33,6 +33,12 @@ common_deps = [
 ]
 inc_dirs = include_directories('include')
 
+
 # Go into subdirectories
+subdir('data')
 subdir('src/bar')
 subdir('src/settings')
+
+meson.add_install_script('glib-compile-schemas', 
+  get_option('prefix') / get_option('datadir') / 'glib-2.0/schemas'
+)

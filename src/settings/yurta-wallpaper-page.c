@@ -10,6 +10,7 @@
 struct _YurtaWallpaperPage {
   AdwNavigationPage parent_instance;
   GtkFlowBox *wallpaper_flowbox;
+  GSettings *settings;
 };
 
 G_DEFINE_TYPE(YurtaWallpaperPage, yurta_wallpaper_page,
@@ -55,7 +56,11 @@ static GdkTexture *make_thumbnail(GFile *file, int target_width,
 }
 
 static void on_wallpaper_selected(GtkButton *btn, gpointer user_data) {
-  const gchar *wallpaper_path = (const gchar *)user_data;
+  YurtaWallpaperPage *self = YURTA_WALLPAPER_PAGE(user_data);
+
+  const gchar *wallpaper_path =
+      g_object_get_data(G_OBJECT(btn), "path-string-guard");
+  // const gchar *wallpaper_path = (const gchar *)user_data;
   if (!wallpaper_path || wallpaper_path[0] == '\0') {
     g_warning("Cannot switch background: Provided wallpaper path is empty or "
               "invalid.");
@@ -64,6 +69,9 @@ static void on_wallpaper_selected(GtkButton *btn, gpointer user_data) {
 
   g_print("Initiating background update via swaybg to target asset: %s\n",
           wallpaper_path);
+
+  g_settings_set_string(self->settings, "current-wallpaper-path",
+                        wallpaper_path);
 
   // Kill other swaybg proccesses
   g_spawn_command_line_async("pkill swaybg", NULL);
@@ -118,8 +126,9 @@ static void on_clicked_bin(GtkGestureClick *gesture, int n_press, double x,
   gtk_widget_set_margin_end(box_box, 16);
 
   // Image Preview
-  GtkWidget *preview =
-      gtk_picture_new_for_file(g_file_new_for_path(card_file_path));
+  GFile *preview_file = g_file_new_for_path(card_file_path);
+  GtkWidget *preview = gtk_picture_new_for_file(preview_file);
+  g_object_unref(preview_file);
 
   gtk_picture_set_content_fit(GTK_PICTURE(preview), GTK_CONTENT_FIT_CONTAIN);
   gtk_widget_set_vexpand(preview, TRUE);
@@ -134,7 +143,7 @@ static void on_clicked_bin(GtkGestureClick *gesture, int n_press, double x,
 
   gchar *button_allocated_path = g_strdup(card_file_path);
   g_signal_connect(btn_apply, "clicked", G_CALLBACK(on_wallpaper_selected),
-                   button_allocated_path);
+                   self);
   g_object_set_data_full(G_OBJECT(btn_apply), "path-string-guard",
                          button_allocated_path, g_free);
 
@@ -222,12 +231,16 @@ static void init_wallpaper(YurtaWallpaperPage *self) {
 }
 
 static void yurta_wallpaper_page_dispose(GObject *object) {
+  YurtaWallpaperPage *self = YURTA_WALLPAPER_PAGE(object);
+  g_clear_object(&self->settings);
+
   gtk_widget_dispose_template(GTK_WIDGET(object), YURTA_TYPE_WALLPAPER_PAGE);
   G_OBJECT_CLASS(yurta_wallpaper_page_parent_class)->dispose(object);
 }
 
 static void yurta_wallpaper_page_init(YurtaWallpaperPage *self) {
   gtk_widget_init_template(GTK_WIDGET(self));
+  self->settings = g_settings_new("org.yurta.settings");
   g_signal_connect_swapped(self, "map", G_CALLBACK(init_wallpaper), self);
 }
 
