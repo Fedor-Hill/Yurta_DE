@@ -6,12 +6,19 @@
 #include "glib.h"
 #include "gtk/gtk.h"
 #include "gtk/gtkshortcut.h"
+#include <stdlib.h>
 
 struct _YurtaWallpaperPage {
   AdwNavigationPage parent_instance;
   GtkFlowBox *wallpaper_flowbox;
   GSettings *settings;
 };
+
+typedef struct {
+  YurtaWallpaperPage *page;
+  gchar *file_path;
+  GdkTexture *texture;
+} WallpaperPreviewLoadData;
 
 G_DEFINE_TYPE(YurtaWallpaperPage, yurta_wallpaper_page,
               ADW_TYPE_NAVIGATION_PAGE)
@@ -157,6 +164,62 @@ static void on_clicked_bin(GtkGestureClick *gesture, int n_press, double x,
   adw_dialog_present(dick, GTK_WIDGET(self));
 }
 
+
+static gboolean add_preview_card(gpointer user_data) {
+  WallpaperPreviewLoadData *data = (WallpaperPreviewLoadData *)user_data;
+  YurtaWallpaperPage *self = data->page;
+
+  // Creatig GtkPicture
+  GtkWidget *gtk_picture;
+  if (data->texture) {
+    gtk_picture = gtk_picture_new_for_paintable(GDK_PAINTABLE(data->texture));
+  } else {
+    GFile *image_file = g_file_new_for_path(data->file_path);
+    gtk_picture = gtk_picture_new_for_file(image_file);
+    g_object_unref(image_file);
+  }
+
+  gtk_picture_set_content_fit(GTK_PICTURE(gtk_picture), GTK_CONTENT_FIT_COVER);
+  gtk_widget_set_size_request(gtk_picture, 120, 80);
+
+  // Creating Bin (Card) Widget
+  GtkWidget *card = adw_bin_new();
+  gtk_widget_add_css_class(card, "card");
+  adw_bin_set_child(ADW_BIN(card), gtk_picture);
+
+  g_object_set_data_full(G_OBJECT(card), "wallpaper-path", g_strdup(data->file_path),
+                         g_free);
+
+  // Add click action to bin
+  GtkGesture *click_gesture = gtk_gesture_click_new();
+  g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_clicked_bin), self);
+  gtk_widget_add_controller(card, GTK_EVENT_CONTROLLER(click_gesture));
+
+  // Add done picture carc to FlowBox
+  gtk_flow_box_append(self->wallpaper_flowbox, card);
+
+
+  //Clean task data
+  g_free(data->file_path);
+  g_clear_object(&data->texture);
+  g_free(data);
+
+  return G_SOURCE_REMOVE;
+}
+
+static void preview_thread_load(GTask *task, gpointer source_object,
+                                gpointer task_data, GCancellable *cancellable) {
+
+  WallpaperPreviewLoadData *data = (WallpaperPreviewLoadData *)task_data;
+  GFile *image_file = g_file_new_for_path(data->file_path);
+
+  data->texture = make_thumbnail(image_file, 240, 160);
+  g_idle_add(add_preview_card, data);
+
+  g_object_unref(image_file);
+  g_object_unref(task);
+}
+
 static void init_wallpaper(YurtaWallpaperPage *self) {
   // Setup path
   const gchar *home = g_get_home_dir();
@@ -186,41 +249,54 @@ static void init_wallpaper(YurtaWallpaperPage *self) {
     }
 
     gchar *file_path = g_build_filename(path, filename, NULL);
-    GFile *image_file = g_file_new_for_path(file_path);
+    // GFile *image_file = g_file_new_for_path(file_path);
+
+    // Creating task
+    WallpaperPreviewLoadData *taskData = g_new0(WallpaperPreviewLoadData, 1);
+    taskData->page = self;
+    taskData->file_path = file_path;
+
+    // Start async tasking
+    GTask *task = g_task_new(self, NULL, NULL, NULL);
+    g_task_set_task_data(task, taskData, NULL);
+    g_task_run_in_thread(task, preview_thread_load);
 
     // Creatig GtkPicture
-    GdkTexture *thumb_texture = make_thumbnail(image_file, 240, 160);
-    GtkWidget *gtk_picture;
-
-    if (thumb_texture) {
-      gtk_picture = gtk_picture_new_for_paintable(GDK_PAINTABLE(thumb_texture));
-      g_object_unref(thumb_texture);
-    } else {
-      gtk_picture = gtk_picture_new_for_file(image_file);
-    }
-
-    gtk_picture_set_content_fit(GTK_PICTURE(gtk_picture),
-                                GTK_CONTENT_FIT_COVER);
-    gtk_widget_set_size_request(gtk_picture, 120, 80);
-
-    // Creating Bin (Card) Widget
-    GtkWidget *card = adw_bin_new();
-    gtk_widget_add_css_class(card, "card");
-    adw_bin_set_child(ADW_BIN(card), gtk_picture);
-
-    g_object_set_data_full(G_OBJECT(card), "wallpaper-path", file_path, g_free);
-
-    // Add click action to bin
-    GtkGesture *click_gesture = gtk_gesture_click_new();
-    g_signal_connect(click_gesture, "pressed", G_CALLBACK(on_clicked_bin),
-                     self);
-    gtk_widget_add_controller(card, GTK_EVENT_CONTROLLER(click_gesture));
-
-    // Add done picture carc to FlowBox
-    gtk_flow_box_append(self->wallpaper_flowbox, card);
+    //     GdkTexture *thumb_texture = make_thumbnail(image_file, 240, 160);
+    //     GtkWidget *gtk_picture;
+    //
+    //     if (thumb_texture) {
+    //       gtk_picture =
+    //       gtk_picture_new_for_paintable(GDK_PAINTABLE(thumb_texture));
+    //       g_object_unref(thumb_texture);
+    //     } else {
+    //       gtk_picture = gtk_picture_new_for_file(image_file);
+    //     }
+    //
+    //     gtk_picture_set_content_fit(GTK_PICTURE(gtk_picture),
+    //                                 GTK_CONTENT_FIT_COVER);
+    //     gtk_widget_set_size_request(gtk_picture, 120, 80);
+    //
+    //     // Creating Bin (Card) Widget
+    //     GtkWidget *card = adw_bin_new();
+    //     gtk_widget_add_css_class(card, "card");
+    //     adw_bin_set_child(ADW_BIN(card), gtk_picture);
+    //
+    //     g_object_set_data_full(G_OBJECT(card), "wallpaper-path", file_path,
+    //     g_free);
+    //
+    //     // Add click action to bin
+    //     GtkGesture *click_gesture = gtk_gesture_click_new();
+    //     g_signal_connect(click_gesture, "pressed",
+    //     G_CALLBACK(on_clicked_bin),
+    //                      self);
+    //     gtk_widget_add_controller(card, GTK_EVENT_CONTROLLER(click_gesture));
+    //
+    //     // Add done picture carc to FlowBox
+    //     gtk_flow_box_append(self->wallpaper_flowbox, card);
 
     // Clear
-    g_object_unref(image_file);
+    // g_object_unref(image_file);
     g_object_unref(info);
   }
 
